@@ -1,18 +1,46 @@
-import { stringify } from "querystring"
+type Roster = Record<number, string[]>;
+type GradeTuple = [string, string[]];
 
 export class GradeSchool {
-    students = {}
-
-    constructor() {
-
+    private studentsByGrade: Roster = {};
+    private static deepClone(object: unknown) {
+        return JSON.parse(JSON.stringify(object));
     }
 
     roster() {
-        return this.students
+        return GradeSchool.deepClone(this.studentsByGrade);
     }
 
-    add(name, grade) {
-        this.students  = stringify(grade) [name]
+    private removeStudentFromRoster(studentName: string) {
+        const removeStudentFromRoster =
+            (studentName: string) =>
+                (studentsByGrade: Roster, [grade, students]: GradeTuple) => {
+                    studentsByGrade[+grade] = students.filter(
+                        (student) => student !== studentName
+                    );
+                    return studentsByGrade;
+                };
+
+        this.studentsByGrade = Object.entries(this.studentsByGrade).reduce(
+            removeStudentFromRoster(studentName),
+            {}
+        );
     }
 
+    add(studentName: string, grade: number) {
+        this.removeStudentFromRoster(studentName);
+
+        const studentsByThisGrade = this.studentsByGrade[grade];
+        this.studentsByGrade[grade] = studentsByThisGrade
+            ? [...studentsByThisGrade, studentName].sort()
+            : [studentName]
+    }
+
+    grade(grade: number) {
+        if (this.studentsByGrade[grade]) {
+            return GradeSchool.deepClone(this.studentsByGrade[grade].sort())
+        } else {
+            return GradeSchool.deepClone([])
+        }
+    }
 }
